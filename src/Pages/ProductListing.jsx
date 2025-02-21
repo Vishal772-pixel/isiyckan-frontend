@@ -1,109 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Star, Sliders, X } from 'lucide-react';
 import Button from '../components/Button';
 
-const products = [
-  // Chairs
-  {
-    id: 1,
-    name: 'Modern Wooden Armchair',
-    price: 299.99,
-    rating: 4.5,
-    image: '/assets/ModernwoodenChair.png',
-    material: 'wood',
-    category: 'chairs',
-    inStock: true,
-    description: 'Elegant wooden armchair with premium finish and comfort.',
-  },
-  {
-    id: 2,
-    name: 'Leather Office Chair',
-    price: 399.99,
-    rating: 4.0,
-    image: '/assets/LeatherChair.png',
-    material: 'leather',
-    category: 'chairs',
-    inStock: true,
-    description: 'Professional leather chair with ergonomic design.',
-  },
-  // Tables
-  {
-    id: 3,
-    name: 'Glass Coffee Table',
-    price: 199.99,
-    rating: 4.2,
-    image: '/assets/GlassCoffeeTable.png',
-    material: 'glass',
-    category: 'tables',
-    inStock: false,
-    description: 'Modern glass coffee table with sleek design.',
-  },
-  {
-    id: 4,
-    name: 'Metal Book shelf',
-    price: 599.99,
-    rating: 4.3,
-    image: '/assets/MetalBookshelf.jpg',
-    material: 'metal',
-    category:  'storage',
-    inStock: true,
-    description: 'Durable metal dining table for stylish dining areas.',
-  },
-  // Storage
-  {
-    id: 5,
-    name: 'Metal Dining Table',
-    price: 149.99,
-    rating: 3.8,
-    image: '/assets/Metaldinningtable.jpg',
-    material: 'metal',
-    category: 'tables',
-    inStock: true,
-    description: 'Industrial style metal bookshelf.',
-  },
-  {
-    id: 6,
-    name: 'Wooden Cabinet',
-    price: 499.99,
-    rating: 4.7,
-    image: '/assets/Woodencabinet.jpg',
-    material: 'wood',
-    category: 'storage',
-    inStock: true,
-    description: 'Classic wooden cabinet with ample storage space.',
-  },
-  // Lighting
-  {
-    id: 7,
-    name: 'Modern Floor Lamp',
-    price: 199.99,
-    rating: 4.1,
-    image: '/assets/ModernFloorlamp.jpg',
-    material: 'metal',
-    category: 'lighting',
-    inStock: true,
-    description: 'Sleek modern floor lamp with adjustable brightness.',
-  },
-  {
-    id: 8,
-    name: 'Glass Pendant Light',
-    price: 299.99,
-    rating: 4.6,
-    image: '/assets/GlassPendentlight.png',
-    material: 'glass',
-    category: 'lighting',
-    inStock: true,
-    description: 'Elegant glass pendant light for dining spaces.',
-  },
-  //  we can add more items as needed
-];
-
 const categories = ['All', 'Chairs', 'Tables', 'Storage', 'Lighting'];
 const materials = ['Wood', 'Metal', 'Leather', 'Glass', 'Fabric'];
 
 export default function ProductListing() {
+  const [products, setProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [priceRange, setPriceRange] = useState(5000);
   const [selectedMaterials, setSelectedMaterials] = useState([]);
@@ -111,22 +16,39 @@ export default function ProductListing() {
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState('featured');
 
-  const toggleMaterial = (material) => {
-    setSelectedMaterials((prev) =>
-      prev.includes(material) ? prev.filter((m) => m !== material) : [...prev, material]
-    );
-  };
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/api/v1/products');
+        const data = await res.json();
+        
+        // Ensure correct data format
+        if (Array.isArray(data)) {
+          setProducts(data);  // If API returns an array directly
+        } else if (Array.isArray(data.products)) {
+          setProducts(data.products);  // If API wraps data inside `products`
+        } else {
+          console.error("Unexpected API response format:", data);
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      }
+    };
+    fetchProducts();
+  }, []);
+  
 
+  // Filtering logic remains unchanged
   const filteredProducts = products
     .filter((product) =>
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase())
+      (product.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (product.description?.toLowerCase() || '').includes(searchQuery.toLowerCase())
     )
     .filter(
       (product) =>
         product.price <= priceRange &&
-        (selectedMaterials.length === 0 || selectedMaterials.includes(product.material)) &&
-        (selectedCategory === 'All' || product.category === selectedCategory.toLowerCase())
+        (selectedMaterials.length === 0 || selectedMaterials.includes(product.material?.toLowerCase())) &&
+        (selectedCategory === 'All' || product.category?.toLowerCase() === selectedCategory.toLowerCase())
     )
     .sort((a, b) => {
       switch (sortBy) {
@@ -207,41 +129,6 @@ export default function ProductListing() {
                   ))}
                 </div>
               </div>
-
-              {/* Price Range */}
-              <div className="mb-8">
-                <h3 className="font-semibold mb-4">Price Range</h3>
-                <input
-                  type="range"
-                  min="0"
-                  max="5000"
-                  value={priceRange}
-                  onChange={(e) => setPriceRange(Number(e.target.value))}
-                  className="w-full accent-primary-600"
-                />
-                <div className="flex justify-between text-sm text-secondary-600 mt-2">
-                  <span>$0</span>
-                  <span>${priceRange}</span>
-                </div>
-              </div>
-
-              {/* Materials */}
-              <div>
-                <h3 className="font-semibold mb-4">Materials</h3>
-                <div className="space-y-2">
-                  {materials.map((material) => (
-                    <label key={material} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={selectedMaterials.includes(material.toLowerCase())}
-                        onChange={() => toggleMaterial(material.toLowerCase())}
-                        className="rounded border-secondary-300 text-primary-600 focus:ring-primary-500"
-                      />
-                      <span className="ml-2">{material}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
 
@@ -256,7 +143,7 @@ export default function ProductListing() {
                   <div className="aspect-w-4 aspect-h-3">
                     <img
                       src={product.image}
-                      alt={product.name}
+                      // alt={product.name}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -277,33 +164,6 @@ export default function ProductListing() {
           </div>
         </div>
       </div>
-
-      {/* Filters - Mobile */}
-      <AnimatePresence>
-        {showFilters && (
-          <motion.div
-            className="fixed inset-0 bg-white z-50 overflow-auto"
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          >
-            <div className="flex justify-between items-center p-4 border-b">
-              <h3 className="text-lg font-semibold">Filters</h3>
-              <button
-                onClick={() => setShowFilters(false)}
-                className="text-secondary-500"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="p-6">
-              {/* Mobile filter content here */}
-              {/* Duplicate desktop filters or adjust as needed */}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

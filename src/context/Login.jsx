@@ -1,27 +1,32 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios'; // ✅ Import axios
 import Button from '../components/Button';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState(null); // ✅ Define error state
   const navigate = useNavigate();
 
-  const handleSubmit = async(e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Send login request to backend
-      const response = await axios.post('http://localhost:8000/api/v1/auth/login', {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        'http://localhost:8000/api/v1/auth/login',
+        { email, password },
+        { withCredentials: true } // ✅ Important for sending cookies (if needed)
+      );
 
-      // Handle success (e.g., save token, navigate)
-      localStorage.setItem('accessToken', response.data.accessToken); // Save JWT token in local storage
+      // ✅ Save JWT token in local storage
+      localStorage.setItem('accessToken', response.data.accessToken);
+      
+      // ✅ Clear error (if any)
       setError(null);
-      navigate('/dashboard'); // Redirect to dashboard after successful login
+      
+      // ✅ Redirect to Dashboard
+      navigate('/dashboard');
     } catch (err) {
-      // Handle error (show error message)
       setError(err.response?.data?.message || 'An error occurred');
     }
   };
@@ -36,6 +41,8 @@ export default function Login() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          {error && <p className="text-red-500 text-center">{error}</p>} {/* ✅ Display error */}
+          
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
