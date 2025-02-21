@@ -5,28 +5,26 @@ import { Star, Sliders, X } from 'lucide-react';
 import Button from '../components/Button';
 
 const categories = ['All', 'Chairs', 'Tables', 'Storage', 'Lighting'];
-const materials = ['Wood', 'Metal', 'Leather', 'Glass', 'Fabric'];
+const itemsPerPage = 10; // Only 10 products per page
 
 export default function ProductListing() {
   const [products, setProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [priceRange, setPriceRange] = useState(5000);
-  const [selectedMaterials, setSelectedMaterials] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState('featured');
+  const [currentPage, setCurrentPage] = useState(1); // Pagination State
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const res = await fetch('http://localhost:8000/api/v1/products');
         const data = await res.json();
-        
-        // Ensure correct data format
+
         if (Array.isArray(data)) {
-          setProducts(data);  // If API returns an array directly
+          setProducts(data);
         } else if (Array.isArray(data.products)) {
-          setProducts(data.products);  // If API wraps data inside `products`
+          setProducts(data.products);
         } else {
           console.error("Unexpected API response format:", data);
         }
@@ -36,19 +34,15 @@ export default function ProductListing() {
     };
     fetchProducts();
   }, []);
-  
 
-  // Filtering logic remains unchanged
+  // 🔍 Filtering logic
   const filteredProducts = products
     .filter((product) =>
-      (product.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-      (product.description?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+      (product.Prima?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (product.Seconda?.toLowerCase() || '').includes(searchQuery.toLowerCase())
     )
     .filter(
-      (product) =>
-        product.price <= priceRange &&
-        (selectedMaterials.length === 0 || selectedMaterials.includes(product.material?.toLowerCase())) &&
-        (selectedCategory === 'All' || product.category?.toLowerCase() === selectedCategory.toLowerCase())
+      (product) => selectedCategory === 'All' || product.Forni === selectedCategory
     )
     .sort((a, b) => {
       switch (sortBy) {
@@ -56,12 +50,17 @@ export default function ProductListing() {
           return a.price - b.price;
         case 'price-desc':
           return b.price - a.price;
-        case 'rating':
-          return b.rating - a.rating;
         default:
           return 0;
       }
     });
+
+  // 🏷 Pagination logic
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="min-h-screen bg-secondary-50">
@@ -71,7 +70,7 @@ export default function ProductListing() {
           <div>
             <h1 className="text-3xl font-bold mb-2">Our Products</h1>
             <p className="text-secondary-600">
-              Showing {filteredProducts.length} products
+              Showing {paginatedProducts.length} of {filteredProducts.length} products
             </p>
           </div>
 
@@ -91,7 +90,6 @@ export default function ProductListing() {
               <option value="featured">Featured</option>
               <option value="price-asc">Price: Low to High</option>
               <option value="price-desc">Price: High to Low</option>
-              <option value="rating">Highest Rated</option>
             </select>
 
             <Button
@@ -110,51 +108,50 @@ export default function ProductListing() {
           {/* Filters - Desktop */}
           <div className="hidden md:block w-64 flex-shrink-0">
             <div className="bg-white rounded-lg shadow-sm p-6 sticky top-24">
-              {/* Categories */}
-              <div className="mb-8">
-                <h3 className="font-semibold mb-4">Categories</h3>
-                <div className="space-y-2">
-                  {categories.map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => setSelectedCategory(category)}
-                      className={`block w-full text-left px-3 py-2 rounded-md transition-colors ${
-                        selectedCategory === category
-                          ? 'bg-primary-50 text-primary-700'
-                          : 'hover:bg-secondary-50'
-                      }`}
-                    >
-                      {category}
-                    </button>
-                  ))}
-                </div>
+              <h3 className="font-semibold mb-4">Categories</h3>
+              <div className="space-y-2">
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`block w-full text-left px-3 py-2 rounded-md transition-colors ${
+                      selectedCategory === category
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'hover:bg-secondary-50'
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
 
           {/* Products Grid */}
           <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProducts.map((product) => (
+            {paginatedProducts.map((product) => (
               <div
-                key={product.id}
+                key={product._id}
                 className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
               >
-                <Link to={`/product/${product.id}`} className="block">
+                <Link to={`/product/${product._id}`} className="block">
                   <div className="aspect-w-4 aspect-h-3">
                     <img
                       src={product.image}
-                      // alt={product.name}
+                      alt={product.Prima} // Corrected Product Name
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-lg">{product.name}</h3>
-                    <p className="text-secondary-600">{product.description}</p>
+                    <h3 className="font-semibold text-lg">{product.Prima}</h3>
+                    <p className="text-secondary-600">{product.Seconda}</p>
                     <div className="mt-4 flex items-center justify-between">
-                      <span className="text-primary-600 font-bold">${product.price}</span>
+                      <span className="text-primary-600 font-bold">
+                        {product.Netto} KG
+                      </span>
                       <span className="flex items-center text-secondary-600 text-sm">
                         <Star className="h-4 w-4 mr-1 text-yellow-500" />
-                        {product.rating}
+                        4.5
                       </span>
                     </div>
                   </div>
@@ -163,6 +160,29 @@ export default function ProductListing() {
             ))}
           </div>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center mt-8">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 border rounded-md mx-2 disabled:opacity-50"
+            >
+              Prev
+            </button>
+            <span className="px-4 py-2 text-lg">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 border rounded-md mx-2 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
