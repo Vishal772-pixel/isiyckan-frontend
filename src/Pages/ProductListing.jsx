@@ -139,7 +139,7 @@ export default function ProductListing() {
                     <img
                       src={product.image}
                       alt={product.Prima} // Corrected Product Name
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   </div>
                   <div className="p-4">
